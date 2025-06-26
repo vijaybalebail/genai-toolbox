@@ -1,5 +1,6 @@
 // internal/sources/oracle/oracle.go
 // Oracle source implementation following genai-toolbox pattern with TNS alias and connection string support
+//Author: Vijay Balebail
 
 package oracle
 
