@@ -16,8 +16,10 @@ package tools
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
+	"strings"
 
 	yaml "github.com/goccy/go-yaml"
 	"github.com/googleapis/genai-toolbox/internal/sources"
@@ -65,6 +67,14 @@ type ToolConfig interface {
 
 type AccessToken string
 
+func (token AccessToken) ParseBearerToken() (string, error) {
+	headerParts := strings.Split(string(token), " ")
+	if len(headerParts) != 2 || strings.ToLower(headerParts[0]) != "bearer" {
+		return "", fmt.Errorf("authorization header must be in the format 'Bearer <token>': %w", ErrUnauthorized)
+	}
+	return headerParts[1], nil
+}
+
 type Tool interface {
 	Invoke(context.Context, ParamValues, AccessToken) (any, error)
 	ParseParams(map[string]any, map[string]map[string]any) (ParamValues, error)
@@ -90,6 +100,8 @@ type McpManifest struct {
 	// A JSON Schema object defining the expected parameters for the tool.
 	InputSchema McpToolsSchema `json:"inputSchema,omitempty"`
 }
+
+var ErrUnauthorized = errors.New("unauthorized")
 
 // Helper function that returns if a tool invocation request is authorized
 func IsAuthorized(authRequiredSources []string, verifiedAuthServices []string) bool {

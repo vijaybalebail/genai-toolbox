@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sqlitesql
+package yugabytedbsql
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	yaml "github.com/goccy/go-yaml"
 	"github.com/googleapis/genai-toolbox/internal/sources"
-	"github.com/googleapis/genai-toolbox/internal/sources/sqlite"
+	"github.com/googleapis/genai-toolbox/internal/sources/yugabytedb"
 	"github.com/googleapis/genai-toolbox/internal/tools"
+	"github.com/yugabyte/pgx/v5/pgxpool"
 )
 
-const kind string = "sqlite-sql"
+const kind string = "yugabytedb-sql"
 
 func init() {
 	if !tools.Register(kind, newConfig) {
@@ -42,13 +42,10 @@ func newConfig(ctx context.Context, name string, decoder *yaml.Decoder) (tools.T
 }
 
 type compatibleSource interface {
-	SQLiteDB() *sql.DB
+	YugabyteDBPool() *pgxpool.Pool
 }
 
-// validate compatible sources are still compatible
-var _ compatibleSource = &sqlite.Source{}
-
-var compatibleSources = [...]string{sqlite.SourceKind}
+var compatibleSources = [...]string{yugabytedb.SourceKind}
 
 type Config struct {
 	Name               string           `yaml:"name" validate:"required"`
@@ -101,7 +98,7 @@ func (cfg Config) Initialize(srcs map[string]sources.Source) (tools.Tool, error)
 		AllParams:          allParameters,
 		Statement:          cfg.Statement,
 		AuthRequired:       cfg.AuthRequired,
-		Db:                 s.SQLiteDB(),
+		Pool:               s.YugabyteDBPool(),
 		manifest:           tools.Manifest{Description: cfg.Description, Parameters: paramManifest, AuthRequired: cfg.AuthRequired},
 		mcpManifest:        mcpManifest,
 	}
@@ -119,8 +116,8 @@ type Tool struct {
 	TemplateParameters tools.Parameters `yaml:"templateParameters"`
 	AllParams          tools.Parameters `yaml:"allParams"`
 
-	Db          *sql.DB
-	Statement   string `yaml:"statement"`
+	Pool        *pgxpool.Pool
+	Statement   string
 	manifest    tools.Manifest
 	mcpManifest tools.McpManifest
 }
@@ -136,59 +133,28 @@ func (t Tool) Invoke(ctx context.Context, params tools.ParamValues, accessToken 
 	if err != nil {
 		return nil, fmt.Errorf("unable to extract standard params %w", err)
 	}
-
-	// Execute the SQL query with parameters
-	rows, err := t.Db.QueryContext(ctx, newStatement, newParams.AsSlice()...)
+	sliceParams := newParams.AsSlice()
+	results, err := t.Pool.Query(ctx, newStatement, sliceParams...)
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute query: %w", err)
 	}
-	defer rows.Close()
 
-	// Get column names
-	cols, err := rows.Columns()
-	if err != nil {
-		return nil, fmt.Errorf("unable to get column names: %w", err)
-	}
+	fields := results.FieldDescriptions()
 
-	values := make([]any, len(cols))
-	valuePtrs := make([]any, len(cols))
-	for i := range values {
-		valuePtrs[i] = &values[i]
-	}
-
-	// Prepare the result slice
-	var result []any
-	// Iterate through the rows
-	for rows.Next() {
-		// Scan the row into the value pointers
-		if err := rows.Scan(valuePtrs...); err != nil {
-			return nil, fmt.Errorf("unable to scan row: %w", err)
+	var out []any
+	for results.Next() {
+		v, err := results.Values()
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse row: %w", err)
 		}
-
-		// Create a map for this row
-		rowMap := make(map[string]interface{})
-		for i, col := range cols {
-			val := values[i]
-			// Handle nil values
-			if val == nil {
-				rowMap[col] = nil
-				continue
-			}
-			// Store the value in the map
-			rowMap[col] = val
+		vMap := make(map[string]any)
+		for i, f := range fields {
+			vMap[f.Name] = v[i]
 		}
-		result = append(result, rowMap)
+		out = append(out, vMap)
 	}
 
-	if err = rows.Close(); err != nil {
-		return nil, fmt.Errorf("unable to close rows: %w", err)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating rows: %w", err)
-	}
-
-	return result, nil
+	return out, nil
 }
 
 func (t Tool) ParseParams(data map[string]any, claims map[string]map[string]any) (tools.ParamValues, error) {

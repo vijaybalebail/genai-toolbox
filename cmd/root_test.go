@@ -206,6 +206,72 @@ func TestServerConfigFlags(t *testing.T) {
 	}
 }
 
+func TestParseEnv(t *testing.T) {
+	tcs := []struct {
+		desc      string
+		env       map[string]string
+		in        string
+		want      string
+		err       bool
+		errString string
+	}{
+		{
+			desc:      "without default without env",
+			in:        "${FOO}",
+			want:      "",
+			err:       true,
+			errString: `environment variable not found: "FOO"`,
+		},
+		{
+			desc: "without default with env",
+			env: map[string]string{
+				"FOO": "bar",
+			},
+			in:   "${FOO}",
+			want: "bar",
+		},
+		{
+			desc: "with empty default",
+			in:   "${FOO:}",
+			want: "",
+		},
+		{
+			desc: "with default",
+			in:   "${FOO:bar}",
+			want: "bar",
+		},
+		{
+			desc: "with default with env",
+			env: map[string]string{
+				"FOO": "hello",
+			},
+			in:   "${FOO:bar}",
+			want: "hello",
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.desc, func(t *testing.T) {
+			if tc.env != nil {
+				for k, v := range tc.env {
+					t.Setenv(k, v)
+				}
+			}
+			got, err := parseEnv(tc.in)
+			if tc.err {
+				if err == nil {
+					t.Fatalf("expected error not found")
+				}
+				if tc.errString != err.Error() {
+					t.Fatalf("incorrect error string: got %s, want %s", err, tc.errString)
+				}
+			}
+			if tc.want != got {
+				t.Fatalf("unexpected want: got %s, want %s", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestToolFileFlag(t *testing.T) {
 	tcs := []struct {
 		desc string
@@ -1166,6 +1232,7 @@ func TestPrebuiltTools(t *testing.T) {
 	alloydb_admin_config, _ := prebuiltconfigs.Get("alloydb-postgres-admin")
 	alloydb_config, _ := prebuiltconfigs.Get("alloydb-postgres")
 	bigquery_config, _ := prebuiltconfigs.Get("bigquery")
+	clickhouse_config, _ := prebuiltconfigs.Get("clickhouse")
 	cloudsqlpg_config, _ := prebuiltconfigs.Get("cloud-sql-postgres")
 	cloudsqlmysql_config, _ := prebuiltconfigs.Get("cloud-sql-mysql")
 	cloudsqlmssql_config, _ := prebuiltconfigs.Get("cloud-sql-mssql")
@@ -1177,6 +1244,8 @@ func TestPrebuiltTools(t *testing.T) {
 	postgresconfig, _ := prebuiltconfigs.Get("postgres")
 	spanner_config, _ := prebuiltconfigs.Get("spanner")
 	spannerpg_config, _ := prebuiltconfigs.Get("spanner-postgres")
+	sqlite_config, _ := prebuiltconfigs.Get("sqlite")
+	neo4jconfig, _ := prebuiltconfigs.Get("neo4j")
 
 	// Set environment variables
 	t.Setenv("API_KEY", "your_api_key")
@@ -1197,6 +1266,13 @@ func TestPrebuiltTools(t *testing.T) {
 	t.Setenv("ALLOYDB_POSTGRES_DATABASE", "your_alloydb_db")
 	t.Setenv("ALLOYDB_POSTGRES_USER", "your_alloydb_user")
 	t.Setenv("ALLOYDB_POSTGRES_PASSWORD", "your_alloydb_password")
+
+	t.Setenv("CLICKHOUSE_PROTOCOL", "your_clickhouse_protocol")
+	t.Setenv("CLICKHOUSE_DATABASE", "your_clickhouse_database")
+	t.Setenv("CLICKHOUSE_PASSWORD", "your_clickhouse_password")
+	t.Setenv("CLICKHOUSE_USER", "your_clickhouse_user")
+	t.Setenv("CLICKHOUSE_HOST", "your_clickhosue_host")
+	t.Setenv("CLICKHOUSE_PORT", "8123")
 
 	t.Setenv("CLOUD_SQL_POSTGRES_PROJECT", "your_pg_project")
 	t.Setenv("CLOUD_SQL_POSTGRES_INSTANCE", "your_pg_instance")
@@ -1244,6 +1320,13 @@ func TestPrebuiltTools(t *testing.T) {
 	t.Setenv("LOOKER_CLIENT_SECRET", "your_looker_client_secret")
 	t.Setenv("LOOKER_VERIFY_SSL", "true")
 
+	t.Setenv("SQLITE_DATABASE", "test.db")
+
+	t.Setenv("NEO4J_URI", "bolt://localhost:7687")
+	t.Setenv("NEO4J_DATABASE", "neo4j")
+	t.Setenv("NEO4J_USERNAME", "your_neo4j_user")
+	t.Setenv("NEO4J_PASSWORD", "your_neo4j_password")
+
 	ctx, err := testutils.ContextWithNewLogger()
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -1257,9 +1340,9 @@ func TestPrebuiltTools(t *testing.T) {
 			name: "alloydb postgres admin prebuilt tools",
 			in:   alloydb_admin_config,
 			wantToolset: server.ToolsetConfigs{
-				"alloydb-postgres-admin-tools": tools.ToolsetConfig{
-					Name:      "alloydb-postgres-admin-tools",
-					ToolNames: []string{"alloydb-create-cluster", "alloydb-operations-get", "alloydb-create-instance", "alloydb-list-clusters", "alloydb-list-instances", "alloydb-list-users", "alloydb-create-user"},
+				"alloydb_postgres_admin_tools": tools.ToolsetConfig{
+					Name:      "alloydb_postgres_admin_tools",
+					ToolNames: []string{"create_cluster", "wait_for_operation", "create_instance", "list_clusters", "list_instances", "list_users", "create_user", "get_cluster"},
 				},
 			},
 		},
@@ -1267,8 +1350,8 @@ func TestPrebuiltTools(t *testing.T) {
 			name: "alloydb prebuilt tools",
 			in:   alloydb_config,
 			wantToolset: server.ToolsetConfigs{
-				"alloydb-postgres-database-tools": tools.ToolsetConfig{
-					Name:      "alloydb-postgres-database-tools",
+				"alloydb_postgres_database_tools": tools.ToolsetConfig{
+					Name:      "alloydb_postgres_database_tools",
 					ToolNames: []string{"execute_sql", "list_tables"},
 				},
 			},
@@ -1277,9 +1360,19 @@ func TestPrebuiltTools(t *testing.T) {
 			name: "bigquery prebuilt tools",
 			in:   bigquery_config,
 			wantToolset: server.ToolsetConfigs{
-				"bigquery-database-tools": tools.ToolsetConfig{
-					Name:      "bigquery-database-tools",
-					ToolNames: []string{"execute_sql", "forecast", "get_dataset_info", "get_table_info", "list_dataset_ids", "list_table_ids"},
+				"bigquery_database_tools": tools.ToolsetConfig{
+					Name:      "bigquery_database_tools",
+					ToolNames: []string{"analyze_contribution", "ask_data_insights", "execute_sql", "forecast", "get_dataset_info", "get_table_info", "list_dataset_ids", "list_table_ids"},
+				},
+			},
+		},
+		{
+			name: "clickhouse prebuilt tools",
+			in:   clickhouse_config,
+			wantToolset: server.ToolsetConfigs{
+				"clickhouse_database_tools": tools.ToolsetConfig{
+					Name:      "clickhouse_database_tools",
+					ToolNames: []string{"execute_sql", "list_databases"},
 				},
 			},
 		},
@@ -1287,8 +1380,8 @@ func TestPrebuiltTools(t *testing.T) {
 			name: "cloudsqlpg prebuilt tools",
 			in:   cloudsqlpg_config,
 			wantToolset: server.ToolsetConfigs{
-				"cloud-sql-postgres-database-tools": tools.ToolsetConfig{
-					Name:      "cloud-sql-postgres-database-tools",
+				"cloud_sql_postgres_database_tools": tools.ToolsetConfig{
+					Name:      "cloud_sql_postgres_database_tools",
 					ToolNames: []string{"execute_sql", "list_tables"},
 				},
 			},
@@ -1297,8 +1390,8 @@ func TestPrebuiltTools(t *testing.T) {
 			name: "cloudsqlmysql prebuilt tools",
 			in:   cloudsqlmysql_config,
 			wantToolset: server.ToolsetConfigs{
-				"cloud-sql-mysql-database-tools": tools.ToolsetConfig{
-					Name:      "cloud-sql-mysql-database-tools",
+				"cloud_sql_mysql_database_tools": tools.ToolsetConfig{
+					Name:      "cloud_sql_mysql_database_tools",
 					ToolNames: []string{"execute_sql", "list_tables"},
 				},
 			},
@@ -1307,8 +1400,8 @@ func TestPrebuiltTools(t *testing.T) {
 			name: "cloudsqlmssql prebuilt tools",
 			in:   cloudsqlmssql_config,
 			wantToolset: server.ToolsetConfigs{
-				"cloud-sql-mssql-database-tools": tools.ToolsetConfig{
-					Name:      "cloud-sql-mssql-database-tools",
+				"cloud_sql_mssql_database_tools": tools.ToolsetConfig{
+					Name:      "cloud_sql_mssql_database_tools",
 					ToolNames: []string{"execute_sql", "list_tables"},
 				},
 			},
@@ -1317,9 +1410,9 @@ func TestPrebuiltTools(t *testing.T) {
 			name: "dataplex prebuilt tools",
 			in:   dataplex_config,
 			wantToolset: server.ToolsetConfigs{
-				"dataplex-tools": tools.ToolsetConfig{
-					Name:      "dataplex-tools",
-					ToolNames: []string{"dataplex_search_entries", "dataplex_lookup_entry", "dataplex_search_aspect_types"},
+				"dataplex_tools": tools.ToolsetConfig{
+					Name:      "dataplex_tools",
+					ToolNames: []string{"search_entries", "lookup_entry", "search_aspect_types"},
 				},
 			},
 		},
@@ -1327,9 +1420,9 @@ func TestPrebuiltTools(t *testing.T) {
 			name: "firestore prebuilt tools",
 			in:   firestoreconfig,
 			wantToolset: server.ToolsetConfigs{
-				"firestore-database-tools": tools.ToolsetConfig{
-					Name:      "firestore-database-tools",
-					ToolNames: []string{"firestore-get-documents", "firestore-add-documents", "firestore-update-document", "firestore-list-collections", "firestore-delete-documents", "firestore-query-collection", "firestore-get-rules", "firestore-validate-rules"},
+				"firestore_database_tools": tools.ToolsetConfig{
+					Name:      "firestore_database_tools",
+					ToolNames: []string{"get_documents", "add_documents", "update_document", "list_collections", "delete_documents", "query_collection", "get_rules", "validate_rules"},
 				},
 			},
 		},
@@ -1337,8 +1430,8 @@ func TestPrebuiltTools(t *testing.T) {
 			name: "mysql prebuilt tools",
 			in:   mysql_config,
 			wantToolset: server.ToolsetConfigs{
-				"mysql-database-tools": tools.ToolsetConfig{
-					Name:      "mysql-database-tools",
+				"mysql_database_tools": tools.ToolsetConfig{
+					Name:      "mysql_database_tools",
 					ToolNames: []string{"execute_sql", "list_tables"},
 				},
 			},
@@ -1347,8 +1440,8 @@ func TestPrebuiltTools(t *testing.T) {
 			name: "mssql prebuilt tools",
 			in:   mssql_config,
 			wantToolset: server.ToolsetConfigs{
-				"mssql-database-tools": tools.ToolsetConfig{
-					Name:      "mssql-database-tools",
+				"mssql_database_tools": tools.ToolsetConfig{
+					Name:      "mssql_database_tools",
 					ToolNames: []string{"execute_sql", "list_tables"},
 				},
 			},
@@ -1357,8 +1450,8 @@ func TestPrebuiltTools(t *testing.T) {
 			name: "looker prebuilt tools",
 			in:   looker_config,
 			wantToolset: server.ToolsetConfigs{
-				"looker-tools": tools.ToolsetConfig{
-					Name:      "looker-tools",
+				"looker_tools": tools.ToolsetConfig{
+					Name:      "looker_tools",
 					ToolNames: []string{"get_models", "get_explores", "get_dimensions", "get_measures", "get_filters", "get_parameters", "query", "query_sql", "query_url", "get_looks", "run_look", "make_look", "get_dashboards", "make_dashboard", "add_dashboard_element"},
 				},
 			},
@@ -1367,8 +1460,8 @@ func TestPrebuiltTools(t *testing.T) {
 			name: "postgres prebuilt tools",
 			in:   postgresconfig,
 			wantToolset: server.ToolsetConfigs{
-				"postgres-database-tools": tools.ToolsetConfig{
-					Name:      "postgres-database-tools",
+				"postgres_database_tools": tools.ToolsetConfig{
+					Name:      "postgres_database_tools",
 					ToolNames: []string{"execute_sql", "list_tables"},
 				},
 			},
@@ -1387,9 +1480,29 @@ func TestPrebuiltTools(t *testing.T) {
 			name: "spanner pg prebuilt tools",
 			in:   spannerpg_config,
 			wantToolset: server.ToolsetConfigs{
-				"spanner-postgres-database-tools": tools.ToolsetConfig{
-					Name:      "spanner-postgres-database-tools",
+				"spanner_postgres_database_tools": tools.ToolsetConfig{
+					Name:      "spanner_postgres_database_tools",
 					ToolNames: []string{"execute_sql", "execute_sql_dql", "list_tables"},
+				},
+			},
+		},
+		{
+			name: "sqlite prebuilt tools",
+			in:   sqlite_config,
+			wantToolset: server.ToolsetConfigs{
+				"sqlite_database_tools": tools.ToolsetConfig{
+					Name:      "sqlite_database_tools",
+					ToolNames: []string{"execute_sql", "list_tables"},
+				},
+			},
+		},
+		{
+			name: "neo4j prebuilt tools",
+			in:   neo4jconfig,
+			wantToolset: server.ToolsetConfigs{
+				"neo4j_database_tools": tools.ToolsetConfig{
+					Name:      "neo4j_database_tools",
+					ToolNames: []string{"execute_cypher", "get_schema"},
 				},
 			},
 		},
