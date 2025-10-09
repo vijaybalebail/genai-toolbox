@@ -718,15 +718,24 @@ steps:
     args:
       - -c
       - |
-        # Install OCI dependencies
-        apt-get update && apt-get install -y wget unzip libaio1
+        set -ex
 
-        # Download and install the OCI client
-        wget -q https://download.oracle.com/otn_software/linux/instantclient/2114000/instantclient-basic-linux.x64-21.14.0.0.0dbru.zip
+        # Install prerequisites
+        apt-get update && apt-get install -y libaio1 unzip
+
+        # Download and install Oracle Instant Client
         mkdir -p /opt/oracle
-        unzip -q instantclient-basic-linux.x64-21.14.0.0.0dbru.zip -d /opt/oracle/
-        export LD_LIBRARY_PATH=/opt/oracle/instantclient_21_14
-        echo "Oracle client installed."
+        cd /opt/oracle
+        wget https://download.oracle.com/otn_software/linux/instantclient/198000/instantclient-basic-linux.x64-19.8.0.0.0dbru.zip
+        wget https://download.oracle.com/otn_software/linux/instantclient/198000/instantclient-sdk-linux.x64-19.8.0.0.0dbru.zip
+        wget https://download.oracle.com/otn_software/linux/instantclient/198000/instantclient-sqlplus-linux.x64-19.8.0.0.0dbru.zip
+        unzip instantclient-basic-linux.x64-19.8.0.0.0dbru.zip
+        unzip instantclient-sdk-linux.x64-19.8.0.0.0dbru.zip
+        unzip instantclient-sqlplus-linux.x64-19.8.0.0.0dbru.zip
+        rm *.zip
+
+        # Add the instant client to the path
+        export PATH=$PATH:/opt/oracle/instantclient_19_8
 
         # Run test files
         .ci/test_with_coverage.sh \
