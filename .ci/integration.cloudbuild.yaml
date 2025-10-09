@@ -33,7 +33,9 @@ steps:
       - name: "go"
         path: "/gopath"
     script: |
-      go test -c -race -cover \
+      script: |
+      CGO_ENABLED=1 go test -c -cover \
+      -ldflags '-extldflags "-static"' \
       -coverpkg=./internal/sources/...,./internal/tools/... ./tests/...
       chmod +x .ci/test_with_coverage.sh
 
