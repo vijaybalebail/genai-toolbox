@@ -16,15 +16,15 @@
 package oracleexecutesql
 
 import (
-        "context"
-        "database/sql"
-        "fmt"
+	"context"
+	"database/sql"
+	"fmt"
 
-        yaml "github.com/goccy/go-yaml"
-        "github.com/googleapis/genai-toolbox/internal/sources"
-        "github.com/googleapis/genai-toolbox/internal/sources/oracle"
-        "github.com/googleapis/genai-toolbox/internal/tools"
-        "github.com/googleapis/genai-toolbox/internal/util"
+	yaml "github.com/goccy/go-yaml"
+	"github.com/googleapis/genai-toolbox/internal/sources"
+	"github.com/googleapis/genai-toolbox/internal/sources/oracle"
+	"github.com/googleapis/genai-toolbox/internal/tools"
+	"github.com/googleapis/genai-toolbox/internal/util"
 )
 
 const kind string = "oracle-execute-sql"
@@ -83,11 +83,7 @@ func (cfg Config) Initialize(srcs map[string]sources.Source) (tools.Tool, error)
         sqlParameter := tools.NewStringParameter("sql", "The SQL to execute.")
         parameters := tools.Parameters{sqlParameter}
 
-        mcpManifest := tools.McpManifest{
-                Name:        cfg.Name,
-                Description: cfg.Description,
-                InputSchema: parameters.McpManifest(),
-        }
+       mcpManifest := tools.GetMcpManifest(cfg.Name, cfg.Description, cfg.AuthRequired, parameters)
 
         // finish tool setup
         t := Tool{

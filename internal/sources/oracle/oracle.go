@@ -2,16 +2,16 @@
 package oracle
 
 import (
-        "context"
-        "database/sql"
-        "fmt"
-        "os"
-        "strings"
+	"context"
+	"database/sql"
+	"fmt"
+	"os"
+	"strings"
 
-        "github.com/goccy/go-yaml"
-        "github.com/googleapis/genai-toolbox/internal/sources"
-        _ "github.com/godror/godror"
-        "go.opentelemetry.io/otel/trace"
+	"github.com/goccy/go-yaml"
+	_ "github.com/godror/godror"
+	"github.com/googleapis/genai-toolbox/internal/sources"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const SourceKind string = "oracle"
@@ -42,14 +42,14 @@ func newConfig(ctx context.Context, name string, decoder *yaml.Decoder) (sources
 type Config struct {
         Name             string `yaml:"name" validate:"required"`
         Kind             string `yaml:"kind" validate:"required"`
-        ConnectionString string `yaml:"connection_string,omitempty"` // Direct connection string (hostname[:port]/servicename)
-        TnsAlias         string `yaml:"tns_alias,omitempty"`         // TNS alias from tnsnames.ora
-        Host             string `yaml:"host,omitempty"`              // Optional when using connection_string/tns_alias
+        ConnectionString string `yaml:"connectionString,omitempty"` // Direct connection string (hostname[:port]/servicename)
+        TnsAlias         string `yaml:"tnsAlias,omitempty"`         // TNS alias from tnsnames.ora
+        Host             string `yaml:"host,omitempty"`              // Optional when using connectionString/tnsAlias
         Port             int    `yaml:"port,omitempty"`              // Explicit port support
-        ServiceName      string `yaml:"service_name,omitempty"`      // Optional when using connection_string/tns_alias
+        ServiceName      string `yaml:"serviceName,omitempty"`      // Optional when using connectionString/tnsAlias
         User             string `yaml:"user" validate:"required"`
         Password         string `yaml:"password" validate:"required"`
-        TnsAdmin         string `yaml:"tns_admin,omitempty"`         // Optional: override TNS_ADMIN environment variable
+        TnsAdmin         string `yaml:"tnsAdmin,omitempty"`         // Optional: override TNS_ADMIN environment variable
 }
 
 // validate ensures we have one of: tns_alias, connection_string, or host+service_name
