@@ -713,7 +713,7 @@ steps:
     env:
       - "GOPATH=/gopath"
       - "SERVICE_ACCOUNT_EMAIL=$SERVICE_ACCOUNT_EMAIL"
-      - "ORACLE_SERVER_NAME=$ORACLE_SERVER_NAME"
+      - "ORACLE_SERVER_NAME=$_ORACLE_SERVER_NAME"
     secretEnv: ["CLIENT_ID", "ORACLE_USER", "ORACLE_PASS", "ORACLE_HOST"]
     volumes:
       - name: "go"
