@@ -11,6 +11,7 @@ import (
 	"github.com/goccy/go-yaml"
 	_ "github.com/godror/godror"
 	"github.com/googleapis/genai-toolbox/internal/sources"
+	"github.com/googleapis/genai-toolbox/internal/util"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -125,15 +126,17 @@ func initOracleConnection(ctx context.Context, tracer trace.Tracer, config Confi
         defer span.End()
 
         var connectString string
-                // ADD THIS DEBUG LINE:
-        fmt.Printf("DEBUG: TnsAdmin field value: '%s'\n", config.TnsAdmin)
+        logger, err := util.LoggerFromContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
 
         // Set TNS_ADMIN environment variable if specified in config
         if config.TnsAdmin != "" {
-                fmt.Printf("DEBUG: Setting TNS_ADMIN to: %s\n", config.TnsAdmin) // ADD THIS LINE
                 originalTnsAdmin := os.Getenv("TNS_ADMIN")
                 os.Setenv("TNS_ADMIN", config.TnsAdmin)
-                fmt.Printf("DEBUG: TNS_ADMIN now set to: %s\n", os.Getenv("TNS_ADMIN")) // ADD THIS LINE
+                logger.DebugContext(ctx, fmt.Sprintf("Setting TNS_ADMIN to: %s\n", config.TnsAdmin))
                 // Restore original TNS_ADMIN after connection
                 defer func() {
                         if originalTnsAdmin != "" {
