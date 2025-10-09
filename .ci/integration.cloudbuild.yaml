@@ -711,6 +711,7 @@ steps:
     env:
       - "GOPATH=/gopath"
       - "SERVICE_ACCOUNT_EMAIL=$SERVICE_ACCOUNT_EMAIL"
+      - "ORACLE_SERVER_NAME=$ORACLE_SERVER_NAME"
     secretEnv: ["CLIENT_ID", "ORACLE_USER", "ORACLE_PASS", "ORACLE_HOST"]
     volumes:
       - name: "go"
@@ -874,3 +875,4 @@ substitutions:
   _YUGABYTEDB_DATABASE: "yugabyte"
   _YUGABYTEDB_PORT: "5433"
   _YUGABYTEDB_LOADBALANCE: "false"
+  _ORACLE_SERVER_NAME: "FREEPDB1"

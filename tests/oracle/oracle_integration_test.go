@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -16,39 +17,32 @@ import (
 	"github.com/googleapis/genai-toolbox/tests"
 )
 
-// var (
-// 	OracleSourceKind = "oracle"
-// 	OracleToolKind   = "oracle-sql"
-// 	OracleProject    = os.Getenv("ORACLE_PROJECT")
-// 	OracleRegion     = os.Getenv("ORACLE_REGION")
-// 	OracleInstance   = os.Getenv("ORACLE_INSTANCE")
-// 	OracleDatabase   = os.Getenv("ORACLE_DATABASE")
-// 	OracleConnectStr = "10.128.0.54:1521/FREEPDB1"
-// 	OracleUser       = os.Getenv("ORACLE_USER")
-// 	OraclePass       = os.Getenv("ORACLE_PASS")
-// )
-
 var (
 	OracleSourceKind = "oracle"
 	OracleToolKind   = "oracle-sql"
-	OracleConnectStr = "host.docker.internal:1521/FREEPDB1"
-	OracleUser       = "system"
-	OraclePass       = "YourSecurePassword"
+	OracleHost = os.Getenv("ORACLE_HOST")
+	OracleUser       = os.Getenv("ORACLE_USER")
+	OraclePass       = os.Getenv("ORACLE_PASS")
+	OracleServerName = os.Getenv("ORACLE_SERVER_NAME")
+	OracleConnStr = fmt.Sprintf(
+		"%s:%s/%s", OracleHost, "1521", OracleServerName)
 )
 
 func getOracleVars(t *testing.T) map[string]any {
 	switch "" {
-	case OracleConnectStr:
-		t.Fatal("'ORACLE_CONN_STR not set")
+	case OracleHost:
+		t.Fatal("'ORACLE_HOST not set")
 	case OracleUser:
 		t.Fatal("'ORACLE_USER' not set")
 	case OraclePass:
 		t.Fatal("'ORACLE_PASS' not set")
+	case OracleServerName:
+		t.Fatal("'ORACLE_SERVER_NAME' not set")
 	}
 
 	return map[string]any{
 		"kind":     OracleSourceKind,
-		"connectionString": OracleConnectStr,
+		"connectionString": OracleConnStr,
 		"user":     OracleUser,
 		"password": OraclePass,
 	}
@@ -80,7 +74,7 @@ func TestOracleSimpleToolEndpoints(t *testing.T) {
 
 	var args []string
 
-	db, err := initOracleConnection(ctx, OracleUser, OraclePass, OracleConnectStr)
+	db, err := initOracleConnection(ctx, OracleUser, OraclePass, OracleConnStr)
 	if err != nil {
 		t.Fatalf("unable to create Oracle connection pool: %s", err)
 	}
