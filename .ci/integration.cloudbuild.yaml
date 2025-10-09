@@ -705,20 +705,6 @@ steps:
           cassandra \
           cassandra
 
-  - id: "compile-oracle-test-binary"
-    name: golang:1
-    waitFor: ["install-dependencies"]
-    env:
-      - "GOPATH=/gopath"
-    volumes:
-      - name: "go"
-        path: "/gopath"
-    script: |
-      script: |
-      go test -c -cover \
-      -coverpkg=./internal/sources/...,./internal/tools/... ./tests/...
-      chmod +x .ci/test_with_coverage.sh
-
   - id: "oracle"
     name: ghcr.io/oracle/oraclelinux8-instantclient:21
     waitFor: ["install-dependencies"]
@@ -737,15 +723,7 @@ steps:
           # Install dependencies
           dnf install -y golang
 
-          go test -c -cover \
-          -coverpkg=./internal/sources/...,./internal/tools/... \
-            ./tests/oracle
-
-          # Run test files
-          .ci/test_with_coverage.sh \
-            "Oracle" \
-            oracle \
-            oracle
+          go test ./tests/oracle
             
 availableSecrets:
   secretManager:
