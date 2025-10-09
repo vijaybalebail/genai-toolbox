@@ -705,7 +705,7 @@ steps:
           cassandra
 
   - id: "oracle"
-    name: golang:1
+    name: ghcr.io/oracle/oraclelinux8-instantclient:21
     waitFor: ["compile-test-binary"]
     entrypoint: /bin/bash
     env:
@@ -718,31 +718,15 @@ steps:
     args:
       - -c
       - |
-        set -ex
+          # Install dependencies
+          dnf install -y golang
 
-        # Install prerequisites
-        apt-get update && apt-get install -y libaio1 unzip
-
-        # Download and install Oracle Instant Client
-        mkdir -p /opt/oracle
-        cd /opt/oracle
-        wget https://download.oracle.com/otn_software/linux/instantclient/198000/instantclient-basic-linux.x64-19.8.0.0.0dbru.zip
-        wget https://download.oracle.com/otn_software/linux/instantclient/198000/instantclient-sdk-linux.x64-19.8.0.0.0dbru.zip
-        wget https://download.oracle.com/otn_software/linux/instantclient/198000/instantclient-sqlplus-linux.x64-19.8.0.0.0dbru.zip
-        unzip instantclient-basic-linux.x64-19.8.0.0.0dbru.zip
-        unzip instantclient-sdk-linux.x64-19.8.0.0.0dbru.zip
-        unzip instantclient-sqlplus-linux.x64-19.8.0.0.0dbru.zip
-        rm *.zip
-
-        # Add the instant client to the path
-        export PATH=$$PATH:/opt/oracle/instantclient_19_8
-
-        # Run test files
-        .ci/test_with_coverage.sh \
-          "Oracle" \
-          oracle \
-          oracle
-          
+          # Run test files
+          .ci/test_with_coverage.sh \
+            "Oracle" \
+            oracle \
+            oracle
+            
 availableSecrets:
   secretManager:
     - versionName: projects/$PROJECT_ID/secrets/cloud_sql_pg_user/versions/latest

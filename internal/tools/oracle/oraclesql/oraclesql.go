@@ -17,9 +17,13 @@ package oraclesql
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 
 	yaml "github.com/goccy/go-yaml"
+	"github.com/godror/godror"
 	"github.com/googleapis/genai-toolbox/internal/sources"
 	"github.com/googleapis/genai-toolbox/internal/sources/oracle"
 	"github.com/googleapis/genai-toolbox/internal/tools"
@@ -134,13 +138,6 @@ func (t Tool) Invoke(ctx context.Context, params tools.ParamValues, accessToken 
         }
         sliceParams := newParams.AsSlice()
 
-        // Debug output to understand what's happening
-        fmt.Printf("=== DEBUG for tool: %s ===\n", t.Name)
-        fmt.Printf("Original SQL: '%s'\n", t.Statement)
-        fmt.Printf("After template resolution: '%s'\n", newStatement)
-        fmt.Printf("Parameter count: %d\n", len(sliceParams))
-        fmt.Printf("Parameter values: %+v\n", sliceParams)
-        fmt.Printf("Parameter types: ")
         for i, p := range sliceParams {
             fmt.Printf("[%d]=%T ", i, p)
         }
@@ -148,23 +145,30 @@ func (t Tool) Invoke(ctx context.Context, params tools.ParamValues, accessToken 
 
         // NO PARAMETER CONVERSION - godror supports :1, :2, :3 natively
         // Execute Oracle query with original statement
+        
         rows, err := t.DB.QueryContext(ctx, newStatement, sliceParams...)
-        if err != nil {
-                return nil, fmt.Errorf("unable to execute Oracle query: %w", err)
-        }
+	if err != nil {
+		return nil, fmt.Errorf("unable to execute query: %w", err)
+	}
         defer rows.Close()
 
-        // Get column names
-        columns, err := rows.Columns()
-        if err != nil {
-                return nil, fmt.Errorf("unable to get columns: %w", err)
-        }
+	cols, err := rows.Columns()
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve rows column name: %w", err)
+	}
+
+
+        // Get Column types
+        colTypes, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get column types: %w", err)
+	}
 
         var out []any
         for rows.Next() {
                 // Create slice to hold values
-                values := make([]interface{}, len(columns))
-                valuePtrs := make([]interface{}, len(columns))
+                values := make([]any, len(cols))
+                valuePtrs := make([]any, len(cols))
                 for i := range values {
                         valuePtrs[i] = &values[i]
                 }
@@ -176,13 +180,32 @@ func (t Tool) Invoke(ctx context.Context, params tools.ParamValues, accessToken 
 
                 // Create result map
                 vMap := make(map[string]any)
-                for i, col := range columns {
+                for i, col := range cols {
                         val := values[i]
-                        if b, ok := val.([]byte); ok {
-                                vMap[col] = string(b)
-                        } else {
-                                vMap[col] = val
-                        }
+                        switch colTypes[i].DatabaseTypeName() {
+			case "JSON":
+				// unmarshal JSON data before storing to prevent double marshaling
+				var unmarshaledData any
+				err := json.Unmarshal(val.([]byte), &unmarshaledData)
+				if err != nil {
+					return nil, fmt.Errorf("unable to unmarshal json data %s", val)
+				}
+				vMap[col] = unmarshaledData
+			case "TEXT", "VARCHAR", "NVARCHAR":
+				vMap[col] = string(val.([]byte))
+                        case "NUMBER":
+                                s := string(val.(godror.Number))
+                                if strings.Contains(s, ".") {
+                                        vMap[col], err = strconv.ParseFloat(s, 64)
+                                } else {
+                                        vMap[col], err = strconv.ParseInt(s, 10, 64)
+                                }
+                                if err != nil {
+                                        return nil, fmt.Errorf("unable to convert NUMBER data '%s' for column %s: %w", s, col, err)
+                                }
+			default:
+				vMap[col] = val
+			}
                 }
                 out = append(out, vMap)
         }
@@ -209,3 +232,4 @@ func (t Tool) Authorized(verifiedAuthServices []string) bool {
 func (t Tool) RequiresClientAuthorization() bool {
         return false
 }
+

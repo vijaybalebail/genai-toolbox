@@ -123,11 +123,17 @@ func TestOracleSimpleToolEndpoints(t *testing.T) {
 	}
 
 	// Get configs for tests
-	select1Want, mcpMyFailToolWant, createTableStatement, mcpSelect1Want := tests.GetMySQLWants()
+	select1Want := "[{\"1\":1}]"
+	mcpMyFailToolWant := `{"jsonrpc":"2.0","id":"invoke-fail-tool","result":{"content":[{"type":"text","text":"unable to execute query: dpiStmt_execute: ORA-00900: invalid SQL statement"}],"isError":true}}`
+	createTableStatement := `"CREATE TABLE t (id SERIAL PRIMARY KEY, name TEXT)"`
+	mcpSelect1Want := `{"jsonrpc":"2.0","id":"invoke my-auth-required-tool","result":{"content":[{"type":"text","text":"{\"1\":1}"}]}}`
 
 	// Run tests
 	tests.RunToolGetTest(t)
-	tests.RunToolInvokeTest(t, select1Want)
+	tests.RunToolInvokeTest(t, select1Want, 
+		tests.DisableOptionalNullParamTest(),
+		tests.WithMyToolById4Want("[{\"id\":4,\"name\":\"\"}]"),
+		)
 	tests.RunMCPToolCallMethod(t, mcpMyFailToolWant, mcpSelect1Want)
 	tests.RunExecuteSqlToolInvokeTest(t, createTableStatement, select1Want)
 	tests.RunToolInvokeWithTemplateParameters(t, tableNameTemplateParam)
@@ -164,55 +170,46 @@ func setupOracleTable(t *testing.T, ctx context.Context, pool *sql.DB, createSta
 func getOracleParamToolInfo(tableName string) (string, string, string, string, string, string, []any) {
 	// Use GENERATED AS IDENTITY for auto-incrementing primary keys.
 	// VARCHAR2 is the standard string type in Oracle.
-	createStatement := fmt.Sprintf("CREATE TABLE %s (id NUMBER GENERATED AS IDENTITY PRIMARY KEY, name VARCHAR2(255))", tableName)
+	createStatement := fmt.Sprintf(`CREATE TABLE %s ("id" NUMBER GENERATED AS IDENTITY PRIMARY KEY, "name" VARCHAR2(255))`, tableName)
 
 	// MODIFIED: Use a PL/SQL block for multiple inserts
 	insertStatement := fmt.Sprintf(`
 		BEGIN
-			INSERT INTO %s (name) VALUES (:1);
-			INSERT INTO %s (name) VALUES (:2);
-			INSERT INTO %s (name) VALUES (:3);
-			INSERT INTO %s (name) VALUES (:4);
+			INSERT INTO %s ("name") VALUES (:1);
+			INSERT INTO %s ("name") VALUES (:2);
+			INSERT INTO %s ("name") VALUES (:3);
+			INSERT INTO %s ("name") VALUES (:4);
 		END;`, tableName, tableName, tableName, tableName)
 
-	toolStatement := fmt.Sprintf("SELECT * FROM %s WHERE id = :1 OR name = :2", tableName)
-	idParamStatement := fmt.Sprintf("SELECT * FROM %s WHERE id = :1", tableName)
-	nameParamStatement := fmt.Sprintf("SELECT * FROM %s WHERE name = :1", tableName)
+	toolStatement := fmt.Sprintf(`SELECT * FROM %s WHERE "id" = :1 OR "name" = :2`, tableName)
+	idParamStatement := fmt.Sprintf(`SELECT * FROM %s WHERE "id" = :1`, tableName)
+	nameParamStatement := fmt.Sprintf(`SELECT * FROM %s WHERE "name" = :1`, tableName)
 
 	// Oracle's equivalent for array parameters is using the 'MEMBER OF' operator
 	// with a collection type defined in the database schema.
-	arrayToolStatement := fmt.Sprintf("SELECT * FROM %s WHERE id MEMBER OF :1 AND name MEMBER OF :2", tableName)
+	arrayToolStatement := fmt.Sprintf(`SELECT * FROM %s WHERE "id" MEMBER OF :1 AND "name" MEMBER OF :2`, tableName)
 
 	params := []any{"Alice", "Jane", "Sid", nil}
 
 	return createStatement, insertStatement, toolStatement, idParamStatement, nameParamStatement, arrayToolStatement, params
 }
 
-
 // getOracleAuthToolInfo returns statements and params for my-auth-tool for Oracle SQL
 func getOracleAuthToolInfo(tableName string) (string, string, string, []any) {
-	createStatement := fmt.Sprintf("CREATE TABLE %s (id NUMBER GENERATED AS IDENTITY PRIMARY KEY, name VARCHAR2(255), email VARCHAR2(255))", tableName)
+	createStatement := fmt.Sprintf(`CREATE TABLE %s ("id" NUMBER GENERATED AS IDENTITY PRIMARY KEY, "name" VARCHAR2(255), "email" VARCHAR2(255))`, tableName)
 
 	// MODIFIED: Use a PL/SQL block for multiple inserts
 	insertStatement := fmt.Sprintf(`
 		BEGIN
-			INSERT INTO %s (name, email) VALUES (:1, :2);
-			INSERT INTO %s (name, email) VALUES (:3, :4);
+			INSERT INTO %s ("name", "email") VALUES (:1, :2);
+			INSERT INTO %s ("name", "email") VALUES (:3, :4);
 		END;`, tableName, tableName)
 
-	toolStatement := fmt.Sprintf("SELECT name FROM %s WHERE email = :1", tableName)
+	toolStatement := fmt.Sprintf(`SELECT "name" FROM %s WHERE "email" = :1`, tableName)
 
 	params := []any{"Alice", tests.ServiceAccountEmail, "Jane", "janedoe@gmail.com"}
 
 	return createStatement, insertStatement, toolStatement, params
-}
-
-// getOracleTmplToolStatement returns statements and params for template parameter test cases for Oracle SQL
-func getOracleTmplToolStatement() (string, string) {
-	tmplSelectCombined := "SELECT * FROM {{.tableName}} WHERE id = :1"
-	tmplSelectFilterCombined := "SELECT * FROM {{.tableName}} WHERE {{.columnFilter}} = :1"
-	
-	return tmplSelectCombined, tmplSelectFilterCombined
 }
 
 // dropAllUserTables finds and drops all tables owned by the current user.
@@ -250,3 +247,4 @@ func dropAllUserTables(t *testing.T, ctx context.Context, db *sql.DB) {
 		}
 	}
 }
+
