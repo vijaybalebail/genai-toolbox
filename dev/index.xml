@@ -4607,7 +4607,22 @@ form of placeholders &lt;code>?&lt;/code>.&lt;/p>
 &lt;p>&lt;strong>Note:&lt;/strong> This tool uses parameterized queries to prevent SQL injections.
 Query parameters can be used as substitutes for arbitrary expressions.
 Parameters cannot be used as substitutes for identifiers, column names, table
-names, or other parts of the query.&lt;/p></description></item><item><title>postgres-execute-sql</title><link>https://vijaybalebail.github.io/genai-toolbox/dev/resources/tools/postgres/postgres-execute-sql/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://vijaybalebail.github.io/genai-toolbox/dev/resources/tools/postgres/postgres-execute-sql/</guid><description>&lt;h2 id="about">About&lt;/h2>
+names, or other parts of the query.&lt;/p></description></item><item><title>Oracle</title><link>https://vijaybalebail.github.io/genai-toolbox/dev/resources/sources/oracle/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://vijaybalebail.github.io/genai-toolbox/dev/resources/sources/oracle/</guid><description>&lt;h2 id="about">About&lt;/h2>
+&lt;p>&lt;a href="https://www.oracle.com/database/">Oracle Database&lt;/a> is a multi-model database management system produced and marketed by Oracle Corporation. It is commonly used for running online transaction processing (OLTP), data warehousing (DW), and mixed (OLTP &amp;amp; DW) database workloads.&lt;/p>
+&lt;h2 id="available-tools">Available Tools&lt;/h2>
+&lt;ul>
+&lt;li>
+&lt;p>&lt;a href="../tools/oracle/oracle-sql.md">&lt;code>oracle-sql&lt;/code>&lt;/a>
+Execute pre-defined prepared SQL queries in Oracle.&lt;/p>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;a href="../tools/oracle/oracle-execute-sql.md">&lt;code>oracle-execute-sql&lt;/code>&lt;/a>
+Run parameterized SQL queries in Oracle.&lt;/p>
+&lt;/li>
+&lt;/ul>
+&lt;h2 id="requirements">Requirements&lt;/h2>
+&lt;h3 id="database-user">Database User&lt;/h3>
+&lt;p>This source uses standard authentication. You will need to &lt;a href="https://docs.oracle.com/en/database/oracle/oracle-database/21/sqlrf/CREATE-USER.html">create an Oracle user&lt;/a> to log in to the database with the necessary permissions.&lt;/p></description></item><item><title>postgres-execute-sql</title><link>https://vijaybalebail.github.io/genai-toolbox/dev/resources/tools/postgres/postgres-execute-sql/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://vijaybalebail.github.io/genai-toolbox/dev/resources/tools/postgres/postgres-execute-sql/</guid><description>&lt;h2 id="about">About&lt;/h2>
 &lt;p>A &lt;code>postgres-execute-sql&lt;/code> tool executes a SQL statement against a Postgres
 database. It&amp;rsquo;s compatible with any of the following sources:&lt;/p>
 &lt;ul>
