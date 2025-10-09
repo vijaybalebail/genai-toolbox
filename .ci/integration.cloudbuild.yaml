@@ -735,7 +735,7 @@ steps:
         rm *.zip
 
         # Add the instant client to the path
-        export PATH=$PATH:/opt/oracle/instantclient_19_8
+        export PATH=$$PATH:/opt/oracle/instantclient_19_8
 
         # Run test files
         .ci/test_with_coverage.sh \
