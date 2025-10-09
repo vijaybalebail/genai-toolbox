@@ -8943,6 +8943,11 @@ Tools that work with OceanBase Sources.
 
  
 
+# Oracle
+Tools that work with Oracle Sources.
+
+ 
+
 # Postgres
 Tools that work with Postgres Sources, such as Cloud SQL for Postgres and AlloyDB. 
 
