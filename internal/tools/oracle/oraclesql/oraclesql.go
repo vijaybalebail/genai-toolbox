@@ -152,10 +152,7 @@ func (t Tool) Invoke(ctx context.Context, params tools.ParamValues, accessToken 
 	}
 	defer rows.Close()
 
-	cols, err := rows.Columns()
-	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve rows column name: %w", err)
-	}
+	cols, _ := rows.Columns()
 
 	// Get Column types
 	colTypes, err := rows.ColumnTypes()
