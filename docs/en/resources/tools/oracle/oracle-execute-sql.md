@@ -13,7 +13,7 @@ aliases:
 An `oracle-execute-sql` tool executes a SQL statement against an Oracle
 database. It's compatible with the following source:
 
-- [oracle](../sources/oracle.md)
+- [oracle](../../sources/oracle.md)
 
 `oracle-execute-sql` takes one input parameter `sql` and runs the sql
 statement against the `source`.
