@@ -33,8 +33,7 @@ steps:
       - name: "go"
         path: "/gopath"
     script: |
-      script: |
-      go test -c -cover \
+      go test -c -race -cover \
       -coverpkg=./internal/sources/...,./internal/tools/... ./tests/...
       chmod +x .ci/test_with_coverage.sh
 
