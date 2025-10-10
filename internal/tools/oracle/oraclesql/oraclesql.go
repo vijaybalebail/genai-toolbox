@@ -32,21 +32,21 @@ import (
 const kind string = "oracle-sql"
 
 func init() {
-        if !tools.Register(kind, newConfig) {
-                panic(fmt.Sprintf("tool kind %q already registered", kind))
-        }
+	if !tools.Register(kind, newConfig) {
+		panic(fmt.Sprintf("tool kind %q already registered", kind))
+	}
 }
 
 func newConfig(ctx context.Context, name string, decoder *yaml.Decoder) (tools.ToolConfig, error) {
-        actual := Config{Name: name}
-        if err := decoder.DecodeContext(ctx, &actual); err != nil {
-                return nil, err
-        }
-        return actual, nil
+	actual := Config{Name: name}
+	if err := decoder.DecodeContext(ctx, &actual); err != nil {
+		return nil, err
+	}
+	return actual, nil
 }
 
 type compatibleSource interface {
-        OracleDB() *sql.DB
+	OracleDB() *sql.DB
 }
 
 // validate compatible sources are still compatible
@@ -55,134 +55,133 @@ var _ compatibleSource = &oracle.Source{}
 var compatibleSources = [...]string{oracle.SourceKind}
 
 type Config struct {
-        Name               string           `yaml:"name" validate:"required"`
-        Kind               string           `yaml:"kind" validate:"required"`
-        Source             string           `yaml:"source" validate:"required"`
-        Description        string           `yaml:"description" validate:"required"`
-        Statement          string           `yaml:"statement" validate:"required"`
-        AuthRequired       []string         `yaml:"authRequired"`
-        Parameters         tools.Parameters `yaml:"parameters"`
-        TemplateParameters tools.Parameters `yaml:"templateParameters"`
+	Name               string           `yaml:"name" validate:"required"`
+	Kind               string           `yaml:"kind" validate:"required"`
+	Source             string           `yaml:"source" validate:"required"`
+	Description        string           `yaml:"description" validate:"required"`
+	Statement          string           `yaml:"statement" validate:"required"`
+	AuthRequired       []string         `yaml:"authRequired"`
+	Parameters         tools.Parameters `yaml:"parameters"`
+	TemplateParameters tools.Parameters `yaml:"templateParameters"`
 }
 
 // validate interface
 var _ tools.ToolConfig = Config{}
 
 func (cfg Config) ToolConfigKind() string {
-        return kind
+	return kind
 }
 
 func (cfg Config) Initialize(srcs map[string]sources.Source) (tools.Tool, error) {
-        // verify source exists
-        rawS, ok := srcs[cfg.Source]
-        if !ok {
-                return nil, fmt.Errorf("no source named %q configured", cfg.Source)
-        }
+	// verify source exists
+	rawS, ok := srcs[cfg.Source]
+	if !ok {
+		return nil, fmt.Errorf("no source named %q configured", cfg.Source)
+	}
 
-        // verify the source is compatible
-        s, ok := rawS.(compatibleSource)
-        if !ok {
-                return nil, fmt.Errorf("invalid source for %q tool: source kind must be one of %q", kind, compatibleSources)
-        }
+	// verify the source is compatible
+	s, ok := rawS.(compatibleSource)
+	if !ok {
+		return nil, fmt.Errorf("invalid source for %q tool: source kind must be one of %q", kind, compatibleSources)
+	}
 
-        allParameters, paramManifest, err := tools.ProcessParameters(cfg.TemplateParameters, cfg.Parameters)
-        if err != nil {
-                return nil, fmt.Errorf("error processing parameters: %w", err)
-        }
+	allParameters, paramManifest, err := tools.ProcessParameters(cfg.TemplateParameters, cfg.Parameters)
+	if err != nil {
+		return nil, fmt.Errorf("error processing parameters: %w", err)
+	}
 
-        mcpManifest := tools.GetMcpManifest(cfg.Name, cfg.Description, cfg.AuthRequired, allParameters)
+	mcpManifest := tools.GetMcpManifest(cfg.Name, cfg.Description, cfg.AuthRequired, allParameters)
 
-        // finish tool setup
-        t := Tool{
-                Name:               cfg.Name,
-                Kind:               kind,
-                Parameters:         cfg.Parameters,
-                TemplateParameters: cfg.TemplateParameters,
-                AllParams:          allParameters,
-                Statement:          cfg.Statement,
-                AuthRequired:       cfg.AuthRequired,
-                DB:                 s.OracleDB(),
-                manifest:           tools.Manifest{Description: cfg.Description, Parameters: paramManifest, AuthRequired: cfg.AuthRequired},
-                mcpManifest:        mcpManifest,
-        }
-        return t, nil
+	// finish tool setup
+	t := Tool{
+		Name:               cfg.Name,
+		Kind:               kind,
+		Parameters:         cfg.Parameters,
+		TemplateParameters: cfg.TemplateParameters,
+		AllParams:          allParameters,
+		Statement:          cfg.Statement,
+		AuthRequired:       cfg.AuthRequired,
+		DB:                 s.OracleDB(),
+		manifest:           tools.Manifest{Description: cfg.Description, Parameters: paramManifest, AuthRequired: cfg.AuthRequired},
+		mcpManifest:        mcpManifest,
+	}
+	return t, nil
 }
 
 // validate interface
 var _ tools.Tool = Tool{}
 
 type Tool struct {
-        Name               string           `yaml:"name"`
-        Kind               string           `yaml:"kind"`
-        AuthRequired       []string         `yaml:"authRequired"`
-        Parameters         tools.Parameters `yaml:"parameters"`
-        TemplateParameters tools.Parameters `yaml:"templateParameters"`
-        AllParams          tools.Parameters `yaml:"allParams"`
+	Name               string           `yaml:"name"`
+	Kind               string           `yaml:"kind"`
+	AuthRequired       []string         `yaml:"authRequired"`
+	Parameters         tools.Parameters `yaml:"parameters"`
+	TemplateParameters tools.Parameters `yaml:"templateParameters"`
+	AllParams          tools.Parameters `yaml:"allParams"`
 
-        DB          *sql.DB
-        Statement   string
-        manifest    tools.Manifest
-        mcpManifest tools.McpManifest
+	DB          *sql.DB
+	Statement   string
+	manifest    tools.Manifest
+	mcpManifest tools.McpManifest
 }
 
 func (t Tool) Invoke(ctx context.Context, params tools.ParamValues, accessToken tools.AccessToken) (any, error) {
-        paramsMap := params.AsMap()
-        newStatement, err := tools.ResolveTemplateParams(t.TemplateParameters, t.Statement, paramsMap)
-        if err != nil {
-                return nil, fmt.Errorf("unable to extract template params %w", err)
-        }
+	paramsMap := params.AsMap()
+	newStatement, err := tools.ResolveTemplateParams(t.TemplateParameters, t.Statement, paramsMap)
+	if err != nil {
+		return nil, fmt.Errorf("unable to extract template params %w", err)
+	}
 
-        newParams, err := tools.GetParams(t.Parameters, paramsMap)
-        if err != nil {
-                return nil, fmt.Errorf("unable to extract standard params %w", err)
-        }
-        sliceParams := newParams.AsSlice()
+	newParams, err := tools.GetParams(t.Parameters, paramsMap)
+	if err != nil {
+		return nil, fmt.Errorf("unable to extract standard params %w", err)
+	}
+	sliceParams := newParams.AsSlice()
 
-        for i, p := range sliceParams {
-            fmt.Printf("[%d]=%T ", i, p)
-        }
-        fmt.Printf("\n")
+	for i, p := range sliceParams {
+		fmt.Printf("[%d]=%T ", i, p)
+	}
+	fmt.Printf("\n")
 
-        // NO PARAMETER CONVERSION - godror supports :1, :2, :3 natively
-        // Execute Oracle query with original statement
-        
-        rows, err := t.DB.QueryContext(ctx, newStatement, sliceParams...)
+	// NO PARAMETER CONVERSION - godror supports :1, :2, :3 natively
+	// Execute Oracle query with original statement
+
+	rows, err := t.DB.QueryContext(ctx, newStatement, sliceParams...)
 	if err != nil {
 		return nil, fmt.Errorf("unable to execute query: %w", err)
 	}
-        defer rows.Close()
+	defer rows.Close()
 
 	cols, err := rows.Columns()
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve rows column name: %w", err)
 	}
 
-
-        // Get Column types
-        colTypes, err := rows.ColumnTypes()
+	// Get Column types
+	colTypes, err := rows.ColumnTypes()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get column types: %w", err)
 	}
 
-        var out []any
-        for rows.Next() {
-                // Create slice to hold values
-                values := make([]any, len(cols))
-                valuePtrs := make([]any, len(cols))
-                for i := range values {
-                        valuePtrs[i] = &values[i]
-                }
+	var out []any
+	for rows.Next() {
+		// Create slice to hold values
+		values := make([]any, len(cols))
+		valuePtrs := make([]any, len(cols))
+		for i := range values {
+			valuePtrs[i] = &values[i]
+		}
 
-                // Scan the values
-                if err := rows.Scan(valuePtrs...); err != nil {
-                        return nil, fmt.Errorf("unable to scan row: %w", err)
-                }
+		// Scan the values
+		if err := rows.Scan(valuePtrs...); err != nil {
+			return nil, fmt.Errorf("unable to scan row: %w", err)
+		}
 
-                // Create result map
-                vMap := make(map[string]any)
-                for i, col := range cols {
-                        val := values[i]
-                        switch colTypes[i].DatabaseTypeName() {
+		// Create result map
+		vMap := make(map[string]any)
+		for i, col := range cols {
+			val := values[i]
+			switch colTypes[i].DatabaseTypeName() {
 			case "JSON":
 				// unmarshal JSON data before storing to prevent double marshaling
 				var unmarshaledData any
@@ -193,43 +192,46 @@ func (t Tool) Invoke(ctx context.Context, params tools.ParamValues, accessToken 
 				vMap[col] = unmarshaledData
 			case "TEXT", "VARCHAR", "NVARCHAR":
 				vMap[col] = string(val.([]byte))
-                        case "NUMBER":
-                                s := string(val.(godror.Number))
-                                if strings.Contains(s, ".") {
-                                        vMap[col], err = strconv.ParseFloat(s, 64)
-                                } else {
-                                        vMap[col], err = strconv.ParseInt(s, 10, 64)
-                                }
-                                if err != nil {
-                                        return nil, fmt.Errorf("unable to convert NUMBER data '%s' for column %s: %w", s, col, err)
-                                }
+			case "NUMBER":
+				s := string(val.(godror.Number))
+				if strings.Contains(s, ".") {
+					vMap[col], err = strconv.ParseFloat(s, 64)
+				} else {
+					vMap[col], err = strconv.ParseInt(s, 10, 64)
+				}
+				if err != nil {
+					return nil, fmt.Errorf("unable to convert NUMBER data '%s' for column %s: %w", s, col, err)
+				}
 			default:
 				vMap[col] = val
 			}
-                }
-                out = append(out, vMap)
-        }
+		}
+		out = append(out, vMap)
+	}
 
-        return out, nil
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("errors encountered during query execution or row processing: %w", err)
+	}
+
+	return out, nil
 }
 
 func (t Tool) ParseParams(data map[string]any, claims map[string]map[string]any) (tools.ParamValues, error) {
-        return tools.ParseParams(t.AllParams, data, claims)
+	return tools.ParseParams(t.AllParams, data, claims)
 }
 
 func (t Tool) Manifest() tools.Manifest {
-        return t.manifest
+	return t.manifest
 }
 
 func (t Tool) McpManifest() tools.McpManifest {
-        return t.mcpManifest
+	return t.mcpManifest
 }
 
 func (t Tool) Authorized(verifiedAuthServices []string) bool {
-        return tools.IsAuthorized(t.AuthRequired, verifiedAuthServices)
+	return tools.IsAuthorized(t.AuthRequired, verifiedAuthServices)
 }
 
 func (t Tool) RequiresClientAuthorization() bool {
-        return false
+	return false
 }
-

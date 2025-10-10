@@ -20,11 +20,11 @@ import (
 var (
 	OracleSourceKind = "oracle"
 	OracleToolKind   = "oracle-sql"
-	OracleHost = os.Getenv("ORACLE_HOST")
+	OracleHost       = os.Getenv("ORACLE_HOST")
 	OracleUser       = os.Getenv("ORACLE_USER")
 	OraclePass       = os.Getenv("ORACLE_PASS")
 	OracleServerName = os.Getenv("ORACLE_SERVER_NAME")
-	OracleConnStr = fmt.Sprintf(
+	OracleConnStr    = fmt.Sprintf(
 		"%s:%s/%s", OracleHost, "1521", OracleServerName)
 )
 
@@ -41,10 +41,10 @@ func getOracleVars(t *testing.T) map[string]any {
 	}
 
 	return map[string]any{
-		"kind":     OracleSourceKind,
+		"kind":             OracleSourceKind,
 		"connectionString": OracleConnStr,
-		"user":     OracleUser,
-		"password": OraclePass,
+		"user":             OracleUser,
+		"password":         OraclePass,
 	}
 }
 
@@ -52,16 +52,16 @@ func getOracleVars(t *testing.T) map[string]any {
 func initOracleConnection(ctx context.Context, user, pass, connStr string) (*sql.DB, error) {
 	// Build the full Oracle connection string for godror driver
 	fullConnStr := fmt.Sprintf(`user="%s" password="%s" connectString="%s"`,
-			user, pass, connStr)
+		user, pass, connStr)
 
 	db, err := sql.Open("godror", fullConnStr)
 	if err != nil {
-			return nil, fmt.Errorf("unable to open Oracle connection: %w", err)
+		return nil, fmt.Errorf("unable to open Oracle connection: %w", err)
 	}
 
 	err = db.PingContext(ctx)
 	if err != nil {
-			return nil, fmt.Errorf("unable to ping Oracle connection: %w", err)
+		return nil, fmt.Errorf("unable to ping Oracle connection: %w", err)
 	}
 
 	return db, nil
@@ -124,16 +124,15 @@ func TestOracleSimpleToolEndpoints(t *testing.T) {
 
 	// Run tests
 	tests.RunToolGetTest(t)
-	tests.RunToolInvokeTest(t, select1Want, 
+	tests.RunToolInvokeTest(t, select1Want,
 		tests.DisableOptionalNullParamTest(),
 		tests.WithMyToolById4Want("[{\"id\":4,\"name\":\"\"}]"),
 		tests.DisableArrayTest(),
-		)
+	)
 	tests.RunMCPToolCallMethod(t, mcpMyFailToolWant, mcpSelect1Want)
 	tests.RunExecuteSqlToolInvokeTest(t, createTableStatement, select1Want)
 	tests.RunToolInvokeWithTemplateParameters(t, tableNameTemplateParam)
 }
-
 
 func setupOracleTable(t *testing.T, ctx context.Context, pool *sql.DB, createStatement, insertStatement, tableName string, params []any) func(*testing.T) {
 	err := pool.PingContext(ctx)
@@ -242,4 +241,3 @@ func dropAllUserTables(t *testing.T, ctx context.Context, db *sql.DB) {
 		}
 	}
 }
-
