@@ -18,9 +18,13 @@ package oracleexecutesql
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 
 	yaml "github.com/goccy/go-yaml"
+	"github.com/godror/godror"
 	"github.com/googleapis/genai-toolbox/internal/sources"
 	"github.com/googleapis/genai-toolbox/internal/sources/oracle"
 	"github.com/googleapis/genai-toolbox/internal/tools"
@@ -137,33 +141,58 @@ func (t Tool) Invoke(ctx context.Context, params tools.ParamValues, accessToken 
         // We proceed, and results.Err() will catch actual query execution errors.
         // 'out' will remain nil if cols is empty or err is not nil here.
 
+        // Get Column types
+        colTypes, err := results.ColumnTypes()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get column types: %w", err)
+	}
+
         var out []any
-        if err == nil && len(cols) > 0 {
-                // create an array of values for each column, which can be re-used to scan each row
-                rawValues := make([]any, len(cols))
+        for results.Next() {
+                // Create slice to hold values
                 values := make([]any, len(cols))
-                for i := range rawValues {
-                        values[i] = &rawValues[i]
+                valuePtrs := make([]any, len(cols))
+                for i := range values {
+                        valuePtrs[i] = &values[i]
                 }
 
-                for results.Next() {
-                        scanErr := results.Scan(values...)
-                        if scanErr != nil {
-                                return nil, fmt.Errorf("unable to parse row: %w", scanErr)
-                        }
-                        vMap := make(map[string]any)
-                        for i, name := range cols {
-                                val := rawValues[i]
-                                // Handle Oracle-specific byte arrays conversion
-                                if b, ok := val.([]byte); ok {
-                                        vMap[name] = string(b)
-                                } else {
-                                        vMap[name] = val
-                                }
-                        }
-                        out = append(out, vMap)
+                // Scan the values
+                if err := results.Scan(valuePtrs...); err != nil {
+                        return nil, fmt.Errorf("unable to scan row: %w", err)
                 }
+
+                // Create result map
+                vMap := make(map[string]any)
+                for i, col := range cols {
+                        val := values[i]
+                        switch colTypes[i].DatabaseTypeName() {
+			case "JSON":
+				// unmarshal JSON data before storing to prevent double marshaling
+				var unmarshaledData any
+				err := json.Unmarshal(val.([]byte), &unmarshaledData)
+				if err != nil {
+					return nil, fmt.Errorf("unable to unmarshal json data %s", val)
+				}
+				vMap[col] = unmarshaledData
+			case "TEXT", "VARCHAR", "NVARCHAR":
+				vMap[col] = string(val.([]byte))
+                        case "NUMBER":
+                                s := string(val.(godror.Number))
+                                if strings.Contains(s, ".") {
+                                        vMap[col], err = strconv.ParseFloat(s, 64)
+                                } else {
+                                        vMap[col], err = strconv.ParseInt(s, 10, 64)
+                                }
+                                if err != nil {
+                                        return nil, fmt.Errorf("unable to convert NUMBER data '%s' for column %s: %w", s, col, err)
+                                }
+			default:
+				vMap[col] = val
+			}
+                }
+                out = append(out, vMap)
         }
+
 
         // Check for errors from iterating over rows or from the query execution itself.
         // results.Close() is handled by defer.

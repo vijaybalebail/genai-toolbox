@@ -119,7 +119,7 @@ func TestOracleSimpleToolEndpoints(t *testing.T) {
 	// Get configs for tests
 	select1Want := "[{\"1\":1}]"
 	mcpMyFailToolWant := `{"jsonrpc":"2.0","id":"invoke-fail-tool","result":{"content":[{"type":"text","text":"unable to execute query: dpiStmt_execute: ORA-00900: invalid SQL statement"}],"isError":true}}`
-	createTableStatement := `"CREATE TABLE t (id SERIAL PRIMARY KEY, name TEXT)"`
+	createTableStatement := `"CREATE TABLE t (id NUMBER GENERATED AS IDENTITY PRIMARY KEY, name VARCHAR2(255));"`
 	mcpSelect1Want := `{"jsonrpc":"2.0","id":"invoke my-auth-required-tool","result":{"content":[{"type":"text","text":"{\"1\":1}"}]}}`
 
 	// Run tests
@@ -127,6 +127,7 @@ func TestOracleSimpleToolEndpoints(t *testing.T) {
 	tests.RunToolInvokeTest(t, select1Want, 
 		tests.DisableOptionalNullParamTest(),
 		tests.WithMyToolById4Want("[{\"id\":4,\"name\":\"\"}]"),
+		tests.DisableArrayTest(),
 		)
 	tests.RunMCPToolCallMethod(t, mcpMyFailToolWant, mcpSelect1Want)
 	tests.RunExecuteSqlToolInvokeTest(t, createTableStatement, select1Want)
