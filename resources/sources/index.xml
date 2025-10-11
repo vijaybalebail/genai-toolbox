@@ -875,22 +875,7 @@ OceanBase.&lt;/p>
 &lt;h3 id="database-user">Database User&lt;/h3>
 &lt;p>This source only uses standard authentication. You will need to create an
 OceanBase user to login to the database with. OceanBase supports
-MySQL-compatible user management syntax.&lt;/p></description></item><item><title>Oracle</title><link>https://vijaybalebail.github.io/genai-toolbox/resources/sources/oracle/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://vijaybalebail.github.io/genai-toolbox/resources/sources/oracle/</guid><description>&lt;h2 id="about">About&lt;/h2>
-&lt;p>&lt;a href="https://www.oracle.com/database/">Oracle Database&lt;/a> is a multi-model database management system produced and marketed by Oracle Corporation. It is commonly used for running online transaction processing (OLTP), data warehousing (DW), and mixed (OLTP &amp;amp; DW) database workloads.&lt;/p>
-&lt;h2 id="available-tools">Available Tools&lt;/h2>
-&lt;ul>
-&lt;li>
-&lt;p>&lt;a href="https://vijaybalebail.github.io/genai-toolbox/resources/tools/oracle/oracle-sql/">&lt;code>oracle-sql&lt;/code>&lt;/a>
-Execute pre-defined prepared SQL queries in Oracle.&lt;/p>
-&lt;/li>
-&lt;li>
-&lt;p>&lt;a href="https://vijaybalebail.github.io/genai-toolbox/resources/tools/oracle/oracle-execute-sql/">&lt;code>oracle-execute-sql&lt;/code>&lt;/a>
-Run parameterized SQL queries in Oracle.&lt;/p>
-&lt;/li>
-&lt;/ul>
-&lt;h2 id="requirements">Requirements&lt;/h2>
-&lt;h3 id="database-user">Database User&lt;/h3>
-&lt;p>This source uses standard authentication. You will need to &lt;a href="https://docs.oracle.com/en/database/oracle/oracle-database/21/sqlrf/CREATE-USER.html">create an Oracle user&lt;/a> to log in to the database with the necessary permissions.&lt;/p></description></item><item><title>PostgreSQL</title><link>https://vijaybalebail.github.io/genai-toolbox/resources/sources/postgres/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://vijaybalebail.github.io/genai-toolbox/resources/sources/postgres/</guid><description>&lt;h2 id="about">About&lt;/h2>
+MySQL-compatible user management syntax.&lt;/p></description></item><item><title>PostgreSQL</title><link>https://vijaybalebail.github.io/genai-toolbox/resources/sources/postgres/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://vijaybalebail.github.io/genai-toolbox/resources/sources/postgres/</guid><description>&lt;h2 id="about">About&lt;/h2>
 &lt;p>&lt;a href="https://www.postgresql.org/">PostgreSQL&lt;/a> is a powerful, open source object-relational database
 system with over 35 years of active development that has earned it a strong
 reputation for reliability, feature robustness, and performance.&lt;/p>
@@ -1157,4 +1142,46 @@ browser) for each request.&lt;/li>
  &lt;td>If true, the source will use client-side OAuth for authorization. Otherwise, it will use Application Default Credentials. Defaults to &lt;code>false&lt;/code>.&lt;/td>
  &lt;/tr>
  &lt;/tbody>
-&lt;/table></description></item></channel></rss>
+&lt;/table></description></item><item><title/><link>https://vijaybalebail.github.io/genai-toolbox/resources/sources/oracle/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://vijaybalebail.github.io/genai-toolbox/resources/sources/oracle/</guid><description>&lt;h1 id="oracle-tools-documentation">Oracle Tools Documentation&lt;/h1>
+&lt;p>Complete guide for using Oracle Database with MCP Toolbox for Databases.&lt;/p>
+&lt;hr>
+&lt;h2 id="table-of-contents">Table of Contents&lt;/h2>
+&lt;ol>
+&lt;li>&lt;a href="https://vijaybalebail.github.io/genai-toolbox/resources/sources/oracle/#overview">Overview&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://vijaybalebail.github.io/genai-toolbox/resources/sources/oracle/#prerequisites">Prerequisites&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://vijaybalebail.github.io/genai-toolbox/resources/sources/oracle/#source-configuration">Source Configuration&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://vijaybalebail.github.io/genai-toolbox/resources/sources/oracle/#available-tools">Available Tools&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://vijaybalebail.github.io/genai-toolbox/resources/sources/oracle/#tool-oracle-execute-sql">Tool: oracle-execute-sql&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://vijaybalebail.github.io/genai-toolbox/resources/sources/oracle/#tool-oracle-sql">Tool: oracle-sql&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://vijaybalebail.github.io/genai-toolbox/resources/sources/oracle/#complete-examples">Complete Examples&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://vijaybalebail.github.io/genai-toolbox/resources/sources/oracle/#best-practices">Best Practices&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://vijaybalebail.github.io/genai-toolbox/resources/sources/oracle/#troubleshooting">Troubleshooting&lt;/a>&lt;/li>
+&lt;/ol>
+&lt;hr>
+&lt;h2 id="overview">Overview&lt;/h2>
+&lt;p>The Oracle source enables AI applications to interact with Oracle Database through MCP Toolbox. It supports:&lt;/p>
+&lt;ul>
+&lt;li>✅ Oracle Database (11g, 12c, 18c, 19c, 21c, 23ai)&lt;/li>
+&lt;li>✅ Oracle Autonomous Database (with Wallet)&lt;/li>
+&lt;li>✅ Oracle Cloud Infrastructure (OCI)&lt;/li>
+&lt;li>✅ On-premise Oracle installations&lt;/li>
+&lt;li>✅ Oracle Express Edition (XE)&lt;/li>
+&lt;/ul>
+&lt;h3 id="quick-start">Quick Start&lt;/h3>
+&lt;div class="highlight">&lt;pre tabindex="0" class="chroma">&lt;code class="language-yaml" data-lang="yaml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">sources&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">my-oracle&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">kind&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">oracle&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">host&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">localhost&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">port&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="m">1521&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">service_name&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">FREEPDB1&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">user&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">${ORACLE_USER}&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">password&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">${ORACLE_PASSWORD}&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="nt">tools&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">execute-sql&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">kind&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">oracle-execute-sql&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">source&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">my-oracle&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="nt">description&lt;/span>&lt;span class="p">:&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="l">Execute SQL queries&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;hr>
+&lt;h2 id="prerequisites">Prerequisites&lt;/h2>
+&lt;p>Before using Oracle tools with MCP Toolbox, you must install the Oracle Instant Client and SQL*Plus.&lt;/p></description></item></channel></rss>
